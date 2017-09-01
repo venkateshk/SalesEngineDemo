@@ -13,6 +13,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
+import org.apache.spark.storage.StorageLevel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sales.engine.config.ConfigHelper;
@@ -58,12 +59,12 @@ public class SalesEngineWorkflowBoundedStates {
                 .setMaster(master);
         JavaSparkContext context = new JavaSparkContext(conf);
 
-        JavaRDD<String> customerRecordRDD = context.textFile(customersData);
+        JavaRDD<String> customerRecordRDD = context.textFile(customersData).persist(StorageLevel.MEMORY_AND_DISK_SER());
         final ImmutableList<String> customerDataHeaders = ImmutableList.of("customer_id", "name", "street", "city", "state", "zip");
         final JavaRDD<CustomerRow> customerRowJavaRDD = customerRecordRDD.flatMap(new CustomerRowBuilderFunction(customerDataHeaders));
         final JavaPairRDD<String, CustomerRow> customerDf = customerRowJavaRDD.mapToPair(customerRow -> new Tuple2<>(customerRow.getCustomerID(), customerRow));
 
-        final JavaRDD<String> salesRecordRDD = context.textFile(salesData);
+        final JavaRDD<String> salesRecordRDD = context.textFile(salesData).persist(StorageLevel.MEMORY_AND_DISK_SER());
         final ImmutableList<String> salesDataHeaders = ImmutableList.of("timestamp", "customer_id", "sales_price");
         final JavaRDD<SalesRow> salesRowJavaRDD = salesRecordRDD.flatMap(new SalesRowBuilderFunction(salesDataHeaders));
         final JavaPairRDD<String, List<SalesRow>> salesDf = SalesRowReducedByCustomerIDTransformation.transform(salesRowJavaRDD);

@@ -36,9 +36,6 @@ public class SalesEngineWorkflowSmallCustomerDataSet {
 
     private static final int TUNING_NUMBER_PARTITIONS = 7;
 
-    private static final Partitioner partitioner = new HashPartitioner(TUNING_NUMBER_PARTITIONS);
-
-
     public static void main(String[] args) throws IOException {
 
         if (args.length != 1 || !"dev".equals(args[0])) {
@@ -68,9 +65,6 @@ public class SalesEngineWorkflowSmallCustomerDataSet {
 
         JavaSparkContext context = new JavaSparkContext(conf);
 
-        //TODO num of partitions??
-        //TODO file system based on the config
-        //TODO cleanup hardcoded directory paths and wrap around HDFS FS API
         JavaRDD<String> customerRecordRDD = context.textFile(customersData).persist(StorageLevel.MEMORY_AND_DISK_SER());
         final ImmutableList<String> customerDataHeaders = ImmutableList.of("customer_id", "name", "street", "city", "state", "zip");
         final JavaRDD<CustomerRow> customerRowJavaRDD = customerRecordRDD.flatMap(new CustomerRowBuilderFunction(customerDataHeaders));
